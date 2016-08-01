@@ -46,7 +46,7 @@ int averageDistance(){
 //controls motors to signal obstacles in the path
 void runPathfinder(){
   int distance = averageDistance();
-  if(distance > middleBoundary){
+  if(220>distance > middleBoundary){
     Serial.print("its far: ");
     Serial.print(distance);
     Serial.println();
@@ -54,14 +54,14 @@ void runPathfinder(){
     analogWrite(leftMotorPin, 100);
     delay(200);
     
-  }else if(distance > immediateBoundary){
+  }else if(middleBoundary>distance > immediateBoundary){
     Serial.print("its middle: ");
     Serial.print(distance);
     Serial.println();
     analogWrite(rightMotorPin, 150);
     analogWrite(leftMotorPin, 150);
     delay(200);
-  }else{
+  }else if(immediateBoundary>distance){
     Serial.print("its immediate: ");
     Serial.print(distance);
     Serial.println();
