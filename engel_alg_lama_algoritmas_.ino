@@ -1,11 +1,12 @@
 int ultrasonicPin = 7; //ultrasonic sensor data read pin
 int filterSize = 1;
 
-int farBoundary=170;
-int middleBoundary = 150; //Distance Zones
-int immediateBoundary = 130;
+int farBoundary=180;
+int middleBoundary = 160; //Distance Zones
+int immediateBoundary = 140;
+int cutoffBoundary=50;
 
-int rightMotorPin = 5; //right motor speed control pin
+int rightMotorPin = 3; //right motor speed control pin
 int leftMotorPin = 6; //left motor speed control pin
 
 
@@ -27,7 +28,12 @@ int getDistance(){
 //controls motors to signal obstacles in the path
 void runPathfinder(){
   int distance = getDistance();
-  if(immediateBoundary > distance ){
+  if(distance < cutoffBoundary){
+    analogWrite(rightMotorPin,0);
+    analogWrite(leftMotorPin, 0);
+    Serial.print(distance);
+    Serial.println();
+  }else if(immediateBoundary > distance){
     Serial.print("its immediate: ");
     Serial.print(distance);
     Serial.println();
