@@ -4,7 +4,7 @@ int ultrasonicDataPin = 7; //ultrasonic sensor data read pin
 int upperBoundary = 150 ;
 int lowerBoundary = 50 ;
 
-int rightMotorPin = 3; //right motor speed control pin
+int rightMotorPin = 5; //right motor speed control pin
 int leftMotorPin = 6; //left motor speed control pin
 
 //output: returns distance in cm between upperBoundary and lowerBoundary
