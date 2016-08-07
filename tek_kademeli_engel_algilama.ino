@@ -1,72 +1,47 @@
-int ultrasonicPin = 7; //ultrasonic sensor data read pin
-int filterSize = 1;
+int ultrasonicDataPin = 7; //ultrasonic sensor data read pin
 
  //Distance Zones
-int immediateBoundary = 150 ;
-int cutoffBoundary=50;
+int upperBoundary = 150 ;
+int lowerBoundary = 50 ;
 
 int rightMotorPin = 3; //right motor speed control pin
 int leftMotorPin = 6; //left motor speed control pin
 
-
-
-
-
-//output: returns distance in cm between maxDistance and minDistance
-int getDistance(){
-  int distance = 0;
-  while(true)
-  {
-    distance = ( pulseIn(ultrasonicPin, HIGH) / 147 ) * 2.54;
-      Serial.println(distance);
-      return distance;
-    
-  }
+//output: returns distance in cm between upperBoundary and lowerBoundary
+int getUltrasonicData(){
+  return ( pulseIn(ultrasonicDataPin, HIGH) / 147 ) * 2.54;
 }
 
 //controls motors to signal obstacles in the path
 void runPathfinder(){
-  int distance = getDistance();
-  if(distance < cutoffBoundary){
+  int distance = getUltrasonicData();
+  Serial.print(distance);
+  Serial.println();
+  if(distance < lowerBoundary){
     analogWrite(rightMotorPin,0);
     analogWrite(leftMotorPin, 0);
-    Serial.print(distance);
-    Serial.println();
-  }else if(immediateBoundary > distance){
-    Serial.print("its immediate: ");
-    Serial.print(distance);
-    Serial.println();
+   // Serial.print(distance);
+   // Serial.println();
+  }else if(upperBoundary > distance){
     analogWrite(rightMotorPin,255 );
     analogWrite(leftMotorPin, 255);
+   // Serial.print(distance);
+   // Serial.println();
     delay(200);
+    analogWrite(rightMotorPin,0);
+    analogWrite(leftMotorPin, 0);
   }
-  
-  analogWrite(rightMotorPin,0);
-  analogWrite(leftMotorPin, 0);
-}
-
-
-
-
-
-
-
-void setup() {
-  pinMode(ultrasonicPin, INPUT);
+ }
+ void pathfinderInitialization(){
+  pinMode(ultrasonicDataPin, INPUT);
   pinMode(rightMotorPin, OUTPUT);
   pinMode(leftMotorPin, OUTPUT);
-  //pinMode(buzzer,OUTPUT);
-  //pinMode(buton,INPUT);
-  //pinMode(x_ekseni,INPUT);
-  //pinMode(y_ekseni,INPUT);
-  //pinMode(guc,OUTPUT);
+ }
+void setup() {
+  pathfinderInitialization();
   Serial.begin(9600);
 }
 
 void loop() {
-  //digitalWrite(guc,HIGH);
-  
   runPathfinder();
-  
 }
-
