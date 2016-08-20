@@ -7,6 +7,12 @@
 Put the nRF8001 setup in the RAM of the nRF8001.
 */
 #include "services.h"
+/**
+Include the services_lock.h to put the setup in the OTP memory of the nRF8001.
+This would mean that the setup cannot be changed once put in.
+However this removes the need to do the setup of the nRF8001 on every reset.
+*/
+
 
 #ifdef SERVICES_PIPE_TYPE_MAPPING_CONTENT
     static services_pipe_type_mapping_t
@@ -46,6 +52,16 @@ void __ble_assert(const char *file, uint16_t line)
 void setup(void)
 {
   Serial.begin(115200);
+  //Wait until the serial port is available (useful only for the Leonardo)
+  //As the Leonardo board is not reseted every time you open the Serial Monitor
+  #if defined (__AVR_ATmega32U4__)
+    while(!Serial)
+    {}
+    delay(5000);  //5 seconds delay for enabling to see the start up comments on the serial board
+  #elif defined(__PIC32MX__)
+    delay(1000);
+  #endif
+
   Serial.println(F("Arduino setup"));
 
   /**
@@ -94,6 +110,10 @@ void setup(void)
 void loop()
 {
   static bool setup_required = false;
+  static bool BConnected = false;
+  static bool BTimings = false;
+  static uint8_t BLedState = 0;
+  static uint8_t iCounter = 10;
 
   // We enter the if statement only when there is a ACI event available to be processed
   if (lib_aci_event_get(&aci_state, &aci_data))
@@ -150,14 +170,27 @@ void loop()
         break;
 
       case ACI_EVT_CONNECTED:
+        BConnected = true;
         Serial.println(F("Evt Connected"));
         break;
 
       case ACI_EVT_PIPE_STATUS:
         Serial.println(F("Evt Pipe Status"));
+
+        if (lib_aci_is_pipe_available(&aci_state, PIPE_BASTON_CONTROL_SERVICE_COUNTER_TX) && (false == BTimings) )
+        {
+          /*
+          Request a change to the link timing as set in the GAP -> Preferred Peripheral Connection Parameters
+          Change the setting in nRFgo studio -> nRF8001 configuration -> GAP Settings and recompile the xml file.
+          */
+          lib_aci_change_timing_GAP_PPCP();
+          BTimings = true;
+        }
         break;
 
       case ACI_EVT_DISCONNECTED:
+        BConnected = false;
+        BTimings = false;
         Serial.println(F("Evt Disconnected/Advertising timed out"));
         lib_aci_connect(180/* in seconds */, 0x0100 /* advertising interval 100ms*/);
         Serial.println(F("Advertising started"));
@@ -180,17 +213,19 @@ void loop()
         break;
 
       case ACI_EVT_DATA_RECEIVED:
-        if(1 == aci_evt->params.data_received.rx_data.pipe_number)
+
+        if(PIPE_BASTON_CONTROL_SERVICE_LED_CONTROL_RX == aci_evt->params.data_received.rx_data.pipe_number)
         {
-            Serial.print("Led State: ");
-            if(1 == aci_evt->params.data_received.rx_data.aci_data[0])
-            {
-                Serial.println("ON");
-            }else{
-                Serial.println("OFF");
-            }                
+          if(aci_evt->params.data_received.rx_data.aci_data[0])
+          {
+            BLedState = true;
+            Serial.print("LED ON");
+          }
+          else{
+            BLedState = false;
+            Serial.print("LED OFF");
+          }
         }
-        
         break;
 
       case ACI_EVT_HW_ERROR:
@@ -208,7 +243,7 @@ void loop()
     }
   }
   else
-  {
+  {   
     //Serial.println(F("No ACI Events available"));
     // No event in the ACI Event queue
     // Arduino can go to sleep now
@@ -226,5 +261,24 @@ void loop()
       setup_required = false;
     }
   }
+
+  
+    
+  if (lib_aci_is_pipe_available(&aci_state, PIPE_BASTON_CONTROL_SERVICE_COUNTER_TX) && (true == BTimings) && (true == BConnected))
+  {
+    lib_aci_send_data(PIPE_BASTON_CONTROL_SERVICE_COUNTER_TX, &iCounter, sizeof(iCounter)); // over the air via bluetooth
+    iCounter --;
+    if(iCounter <= 0)
+    {
+      iCounter = 10;
+    }
+  }
+  
+//  if (lib_aci_is_pipe_available(&aci_state, PIPE_BASTON_CONTROL_SERVICE_LED_CONTROL_RX) && (true == BTimings) && (true == BConnected))
+//  {
+//    lib_aci_set_local_data(&aci_state, PIPE_BASTON_CONTROL_SERVICE_LED_CONTROL_RX, &BLedState, sizeof(BLedState));
+//  }
+  
 }
+
 
