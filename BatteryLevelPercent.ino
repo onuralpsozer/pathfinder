@@ -10,13 +10,13 @@ void setup() {
   batteryLevelVoltage = batteryLevelValue * (5.0 / 1023.0);
   Serial.print(batteryLevelVoltage);
   Serial.println();
-  Serial.print("%");
   if(batteryLevelVoltage < 3){
     Serial.print("% 0");
     Serial.println();
   }
   else {
   float BatteryLevelPercent = (batteryLevelVoltage - 3.0)*100.0/1.2;
+  Serial.print("%");
   Serial.print(BatteryLevelPercent);
   Serial.println();
   }
